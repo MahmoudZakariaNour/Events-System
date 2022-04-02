@@ -8,6 +8,7 @@ var validator = require("email-validator");                     //Email Validato
 
 //(POST)Add New Speaker
 exports.addSpeaker = (req, res, nxt) => {
+    console.log(req.file);
     console.log(`Registering new Speaker With Name: ${req.body.name} with Role: ${req.role}.`);
     let result = validationResult(req);
     if (!result.isEmpty()) {
@@ -31,11 +32,13 @@ exports.addSpeaker = (req, res, nxt) => {
                 name: req.body.name,
                 email: req.body.email,
                 password: hash,
-                image: req.body.imageURL
+                image: req.body.ImgUrl
             });
             speakerObject.save()
                 .then((data) => {
                     console.log(`Speaker Added ${data}`);
+                    console.log(req.body);
+                    req.body.id = data._id;
                     res.status(201).json({ message: "Speaker Added" });
 
                 })
@@ -53,6 +56,7 @@ exports.getSpeaker = (req, res, nxt) => {
     // If the optional id param is givin Then GetThatSpeaker
     console.log(`Getting Speaker With Name: ${req.body.name} with Role: ${req.role}.`);
     let speakerId = req.params.id || req.body.id;
+    // var deToken = jwt.verify(req.get("token"),process.env.SecretKey );
 
     if (req.role != "admin") {
         // is not an admin

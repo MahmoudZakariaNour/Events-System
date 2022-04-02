@@ -2,12 +2,17 @@ const mongoose = require("mongoose");                           //NodeJS-MongoDB
 const Student = require("./../Models/StudentModel.js")          //Students Schema
 const { validationResult } = require("express-validator");      //Input Validator
 const bcrypt = require('bcryptjs');                             //En/Decrypt Tool
+const idAutoInc = require("id-auto-increment");
 var validator = require("email-validator");                     //Email Validator
+const jwt = require("jsonwebtoken");
 
 //(POST)Add New Student
 exports.addStudent = (req, res, nxt) => {
-    console.log(`Registering new Student With Name: ${req.body.name}.`);
+    // console.log(req.body);
+    // console.log(`Registering new Student: ${req.body}.`);
+    // console.log(`Registering new Student With Name: ${req.body.name}.`);
     let result = validationResult(req);
+    
     if (!result.isEmpty()) {
         let errMsgs = result.array().reduce((conc, err) => conc + err.msg + ".\n", "Validation Result Errors: \n")
         let errObj = new Error(errMsgs);
@@ -21,25 +26,40 @@ exports.addStudent = (req, res, nxt) => {
         errObj.status = 423;
         throw errObj;
     }
-
+    if (req.body.password == "") {
+        let errObj = new Error(`Password Can't Be Empty`);
+        errObj.status = 424;
+        throw errObj;
+    }
     //Encrypt password before adding user
     bcrypt.hash(req.body.password, 10)
         .then((hash) => {
-            let studentObject = new Student({
-                _id: req.body.id,
-                name: req.body.name,
-                email: req.body.email,
-                password: hash
-            });
-            studentObject.save()
-                .then((data) => {
-                    console.log(`Student Added ${data}`);
-                    res.status(201).json({ message: "Student Added" });
+            idAutoInc()
+                .then(function (id) {
+                    // console.log(id);
+                    let studentObject = new Student({
+                        _id: id,
+                        name: req.body.name,
+                        email: req.body.email,
+                        password: hash
+                    });
+                    studentObject.save()
+                        .then((data) => {
+                            console.log(`Student Added ${data}`);
+                            res.status(201).json({ message: "Student Added" });
 
+                        })
+                        .catch(err => {
+                            // console.log(err.message);
+                            nxt(err);
+                        })
                 })
-                .catch(err => {
-                    nxt(err);
-                })
+                .catch(function (err) {
+                    // err is instance of Error
+                    nxt(`Failed To Auto Increment ID With ${err}`);
+
+                });
+
         }).catch(err => {
             nxt(`Failed To Encrypt Password With ${err}`);
 
@@ -49,6 +69,8 @@ exports.addStudent = (req, res, nxt) => {
 //(GET) Get Student/s
 exports.getStudent = (req, res, nxt) => {
     // If the optional id param is givin Then GetThatStudent
+    var deToken = jwt.verify(req.get("token"),process.env.SecretKey );
+    // console.log(deToken);
     if (req.params.id || req.body.id) {
         let studentId = req.params.id || req.body.id;
         // console.log(req);
@@ -59,13 +81,17 @@ exports.getStudent = (req, res, nxt) => {
             .catch(err => nxt(err));
 
     } else {
-        //GetAllStudents
-        Student.find({})
-            .then(data => {
-                res.status(200).json({ message: "List Of Students", data });
-            })
-            .catch(err => nxt(err));
-
+        if (deToken.role == "admin") {
+            //GetAllStudents
+            Student.find({})
+                .then(data => {
+                    res.status(200).json({ message: "List Of Students", data });
+                })
+                .catch(err => nxt(err));
+        }else{
+            nxt(`Not Admin Getting All Students`);
+            
+        }
     }
 }//End of GET
 

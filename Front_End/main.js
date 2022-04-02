@@ -2,11 +2,14 @@ const MailTxt = document.getElementById("MailTxt");
 const PassTxt = document.getElementById("PassTxt");
 
 const LoginBtn = document.getElementById("LoginBtn");
-const RegisBtn = document.getElementById("RegisBtn");
+const RegisStudentBtn = document.getElementById("RegisStdnBtn");
+const RegisSpeakerBtn = document.getElementById("RegisSpkrBtn");
+
+const OutputLbl = document.getElementById("OutPut");
 
 LoginBtn.addEventListener("click", () => {
     console.log("try Login")
-    if (MailTxt.value == "" || MailTxt.value == "") {
+    if (MailTxt.value == "" ||PassTxt.value == "") {
         alert("Please Enter Your Email And Password");
         return;
     }
@@ -30,7 +33,7 @@ LoginBtn.addEventListener("click", () => {
                 window.location.replace("/Front_End/AdminPanel/admin.html");
             }
             else if (tokenJson.role == "student") {
-                window.location.replace("/Front_End/SpeakerPanel/student.html");
+                window.location.replace("/Front_End/StudentPanel/student.html");
 
             }
             else if (tokenJson.role == "speaker") {
@@ -40,6 +43,12 @@ LoginBtn.addEventListener("click", () => {
             console.log(tokenJson);
             // console.log(responseJson)
 
+        }else if(xmlHttp.status == 500){
+            // OutputLbl.innerText = xmlHttp.response;
+            alert(xmlHttp.response);
+
+        }else{
+            // console.log(xmlHttp.status)
         }
         // console.log(xmlHttp);
 
@@ -50,8 +59,11 @@ LoginBtn.addEventListener("click", () => {
 });
 
 
-RegisBtn.addEventListener("click", () => {
-    console.log("Do Register")
+RegisStudentBtn.addEventListener("click", () => {
+    window.location.replace("/Front_End/StudentPanel/register.html");
+});
+RegisSpeakerBtn.addEventListener("click", () => {
+    window.location.replace("/Front_End/SpeakerPanel/register.html");
 });
 
 function tryLoggin() {

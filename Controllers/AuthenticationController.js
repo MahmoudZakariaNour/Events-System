@@ -8,12 +8,18 @@ require('dotenv').config()
 
 exports.login = (req, res, nxt) => {
     let token;
-    console.log(req.body);
+    console.log("Try Login:" + req.body.email);
     //Try Login as Admin
     if (req.body.email == "admin" && req.body.password == "admin") {
-        token = jwt.sign({ role: "admin", userName: "mahmoud" },
+        token = jwt.sign(
+            {
+                role: "admin",
+                email: "admin@adm.in",
+                id: "1"
+            },
             process.env.SecretKey,
             { expiresIn: "1h" });
+        console.log("Logged In As Admin");
         res.status(200).json({ message: "logged in as admin", token })
 
     }
@@ -21,6 +27,7 @@ exports.login = (req, res, nxt) => {
         // Try Login as Student
         StudentModel.findOne({ email: req.body.email/*, password: req.body.password*/ })
             .then((dataStudent) => {
+                // if (dataStudent == null) console.log("Login With Null Student Data");
                 if (dataStudent != null && bcrypt.compareSync(req.body.password, dataStudent.password)) {
                     //Logged in as Student  
                     token = jwt.sign({
@@ -29,10 +36,12 @@ exports.login = (req, res, nxt) => {
                         id: dataStudent.id
                     },
                         process.env.SecretKey, { expiresIn: "1h" });
+                    console.log("Logged In As Student");
                     res.status(200).json({ message: "logged in as student", token });
                 }
                 else {
                     //Try login as Speaker
+                    // if (dataStudent == null) console.log("Login With Null Speaker Data");
                     SpeakerModel.findOne({ email: req.body.email })
                         .then((dataSpeaker) => {
                             if (dataSpeaker != null && bcrypt.compareSync(req.body.password, dataSpeaker.password)) {
@@ -43,22 +52,17 @@ exports.login = (req, res, nxt) => {
                                     id: dataSpeaker.id
                                 },
                                     process.env.SecretKey, { expiresIn: "2h" });
+                                console.log("Logged In As Speaker");
                                 res.status(200).json({ message: "logged in as speaker", token });
                             }
                         })
-                        .catch(err => nxt(err));
-                    // if (data == null)
+                        .catch((err) => {
+                            nxt(new Error("Wrong Email Or Password"));
+
+                        });
                 }
 
-                nxt(new Error("Not Autheniticated"));
-                // res.status(200).json({ message: "logged in", token })
             })
             .catch(err => nxt(err))
-        //    let errorObject=new Error("Not Athenticated");
-        //    errorObject.status=403;// check 
-        //    throw errorObject;
     }
-
-    // console.log(`Login Into User ${req.body.un}.`);
-    // res.status(200).json({ message: `Login Into User ${req.body.un}.` });
 }
